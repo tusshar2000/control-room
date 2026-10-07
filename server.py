@@ -173,9 +173,15 @@ def agents_for(session_dir, now):
             "start": summary["start"],
             "last": summary["last"],
             "activity": summary["events"][-1] if summary["events"] else None,
+            # Tool calls in each 10 s bucket over the last 2 minutes, oldest first (sparkline).
+            "spark": [sum(1 for e in summary["events"] if 10 * b <= now - e["t"] < 10 * (b + 1)) for b in reversed(range(12))],
             "events": summary["events"][-25:],
         })
     agents.sort(key=lambda a: a["start"])
+    # Claude Code writes the run file only when a run ends, so a running run is known only from its journal.
+    for agent in agents:
+        if agent["run"] and agent["run"] not in runs:
+            runs[agent["run"]] = {"id": agent["run"], "name": "workflow", "phases": [], "start": agent["start"]}
     for run in runs.values():
         members = [a for a in agents if a["run"] == run["id"]]
         run["status"] = "running" if any(a["status"] == "running" for a in members) else "done"
