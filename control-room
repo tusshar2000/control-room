@@ -1,0 +1,12 @@
+#!/bin/sh
+# control-room         terminal view in this pane
+# control-room split   terminal view in a new cmux pane on the right
+# control-room web     browser view at http://127.0.0.1:4317
+dir="$HOME/.claude/control-room"
+case "$1" in
+  split) exec cmux new-split right --command "python3 $dir/tui.py" ;;
+  web)
+    curl -s -o /dev/null http://127.0.0.1:4317/ || { nohup python3 "$dir/server.py" >/dev/null 2>&1 & sleep 1; }
+    exec open http://127.0.0.1:4317 ;;
+  *) exec python3 "$dir/tui.py" ;;
+esac
